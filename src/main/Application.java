@@ -213,9 +213,13 @@ public class Application extends javafx.application.Application {
 			Collections.sort(donorList);
 
 			break;
+		// FIXME: Chronological order works only if you start with it and never toggle
+		// sortType.
+		// It simply adds the next donor to the end of the list. If the list was
+		// previously sorted, it wont resort
+		// TODO: Save the timestamp of the donation and sort by that.
 		case CHRONOLOGICAL:
 			donorList.add(MessageFormat.format(DONATION_FORMAT, donor, donation));
-
 			break;
 		case TOTAL_DONATIONS:
 			donorList.clear();
@@ -249,7 +253,6 @@ public class Application extends javafx.application.Application {
 		}
 	}
 
-	// Utility method to determine if a String can be parsed into a Double
 	private double getPercent() {
 		return current / target;
 	}
