@@ -1,10 +1,14 @@
 package main;
 
+import static main.SortUtil.Type.ALPHABETICAL;
+import static main.SortUtil.Type.AMOUNT;
+import static main.SortUtil.Type.CHRONOLOGICAL;
+
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,6 +34,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import main.SortUtil.Type;
 
 public class Application extends javafx.application.Application {
 
@@ -37,34 +42,29 @@ public class Application extends javafx.application.Application {
 		launch(args);
 	}
 
-	private enum SortType {
-		ALPHABETICAL,
-		TOTAL_DONATIONS,
-		CHRONOLOGICAL;
-	}
-
-	private static SortType sortType = SortType.CHRONOLOGICAL;
+	private static Type sortType = CHRONOLOGICAL;
 
 	// Constants
 	private static final String	TITLE				= "FBE Fundraiser";
 	private static final String	TITLE_FORMAT		= "Goal : ${0}";
 	private static final String	MESSAGE_FORMAT		= "Thank you {0} for donating ${1}";
-	private static final String	DONATION_FORMAT		= "{0} - ${1}";
 	private static final String	FONT				= "Arial Monospace";
 	private static final String	APPLE_LOGO_ALPHA	= "file:FBE_AppleIconALPHA.png";
 
-	private static final double	PROGRESSBAR_WIDTH	= 800;
-	private static final double	PROGRESSBAR_HEIGHT	= 800;
+	private static final Double	PROGRESSBAR_WIDTH	= 600d;
+	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
 
-	private double	current	= 0;
-	private double	target	= 5000;
-
-	private Map<String, Double>		donorMap	= new HashMap<String, Double>();
-	private ObservableList<String>	donorList;
+	private final Map<String, Set<Donation>>	donations	= new HashMap<String, Set<Donation>>();
+	private Double								target		= 5000d;
 
 	// Class-level field because we want to be able to access it from anywhere.
-	private Text		display;
-	private Rectangle	progressBarAmount;
+	private Text					display;
+	private Rectangle				progressBarAmount;
+	private ObservableList<String>	donationsList;
+	private Button					toggleSortTypeButton;
+	private Button					lumpDonationsButton;
+
+	private boolean lumpDonations = false;
 
 	@Override
 	public void start(Stage stage) {
@@ -107,8 +107,8 @@ public class Application extends javafx.application.Application {
 		// Setup the Right section
 		pane.setRight(new ListView<String>() {
 			{
-				donorList = FXCollections.observableArrayList();
-				setItems(donorList);
+				donationsList = FXCollections.observableArrayList();
+				setItems(donationsList);
 			}
 		});
 
@@ -118,10 +118,10 @@ public class Application extends javafx.application.Application {
 				setAlignment(Pos.CENTER);
 
 				Label donationLabel = new Label("Donation: ");
-				TextField donationInput = new TextField();
+				TextField amountInput = new TextField();
 
 				Label donorLabel = new Label("Donor: ");
-				TextField donorInput = new TextField();
+				TextField nameInput = new TextField();
 
 				display = new Text();
 				display.setFill(Color.FIREBRICK);
@@ -134,11 +134,11 @@ public class Application extends javafx.application.Application {
 						try {
 							// Get the inputs, donation and donor.
 							// NOTE: If donation isn't valid, catch the exception and tell the user.
-							Double donation = Double.parseDouble(donationInput.getText());
-							String donor = donorInput.getText();
+							Double amount = Double.parseDouble(amountInput.getText());
+							String name = nameInput.getText();
+							Donation donation = new Donation(name, amount);
 
-							updateProgressBar(donation, donor);
-							updateDonorList(donation, donor);
+							updateUI(donation);
 
 						} catch (NumberFormatException nfe) {
 							// If we fail to get a valid Double input, then tell the user.
@@ -147,29 +147,38 @@ public class Application extends javafx.application.Application {
 					}
 				});
 
-				Button toggleSortType = new Button("Toggle Sort");
-				toggleSortType.setOnAction(new EventHandler<ActionEvent>() {
-
+				toggleSortTypeButton = new Button(sortType.displayName());
+				toggleSortTypeButton.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent e) {
 						toggleSortType();
+						updateList();
 					}
+				});
 
+				lumpDonationsButton = new Button(lumpDonations ? "Total Donations" : "Individual Donations");
+				lumpDonationsButton.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent e) {
+						lumpDonations = !lumpDonations;
+						updateList();
+					}
 				});
 
 				// Add Donation label and input to first row, first/second column respectively
 				add(donationLabel, 0, 0);
-				add(donationInput, 1, 0);
+				add(amountInput, 1, 0);
 
 				// Add Donation label and input to second row, first/second column respectively
 				add(donorLabel, 0, 1);
-				add(donorInput, 1, 1);
+				add(nameInput, 1, 1);
 
 				// Add Donation label and input to third row, first/second column respectively
 				add(submitDonation, 0, 2);
 				add(display, 1, 2);
 
-				add(toggleSortType, 0, 3);
+				add(toggleSortTypeButton, 0, 3);
+				add(lumpDonationsButton, 1, 3);
 
 			}
 		});
@@ -181,80 +190,63 @@ public class Application extends javafx.application.Application {
 		stage.show();
 	}
 
-	private void updateProgressBar(Double donation, String donor) {
-		// If no donor was given, assign it to 'Anonymous'.
-		if (donor.isEmpty()) {
-			donor = "Anonymous";
-		}
+	private void updateUI(Donation donation) {
+		// Update the current running total, set the height of the progressBar, update
+		// the display list,and display message.
+		Double amount = donation.getAmount();
+		String name = donation.getName();
 
-		// Update the current, set the height of the progressBar, and display message.
-		current += donation;
 		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
-		display.setText(MessageFormat.format(MESSAGE_FORMAT, donor, donation));
+
+		updateDonations(donation);
+		updateList();
+		display.setText(MessageFormat.format(MESSAGE_FORMAT, name, amount));
 	}
 
-	private void updateDonorList(Double donation, String donor) {
-		// Add the donation to the map.
-		if (!donorMap.containsKey(donor)) {
-			// If it's a first time donor, add him to map with donation.
-			donorMap.put(donor, donation);
-		} else {
-			// If it's a repeat donor, put his running total into the map.
-			donorMap.put(donor, donorMap.get(donor) + donation);
+	private void updateDonations(Donation donation) {
+		// If that person hasn't made a donation, make a set for them.
+		String name = donation.getName();
+		if (!donations.containsKey(name)) {
+			donations.put(name, new HashSet<Donation>());
 		}
+		// Add the donation to the person's set.
+		donations.get(name).add(donation);
+	}
 
-		switch (sortType) {
-		case ALPHABETICAL:
-			donorList.clear();
-			for (String name : donorMap.keySet()) {
-				Double total = donorMap.get(name);
-				donorList.add(MessageFormat.format(DONATION_FORMAT, name, total));
-			}
-			Collections.sort(donorList);
-
-			break;
-		// FIXME: Chronological order works only if you start with it and never toggle
-		// sortType.
-		// It simply adds the next donor to the end of the list. If the list was
-		// previously sorted, it wont resort
-		// TODO: Save the timestamp of the donation and sort by that.
-		case CHRONOLOGICAL:
-			donorList.add(MessageFormat.format(DONATION_FORMAT, donor, donation));
-			break;
-		case TOTAL_DONATIONS:
-			donorList.clear();
-			for (String name : donorMap.keySet()) {
-				Double total = donorMap.get(name);
-				donorList.add(MessageFormat.format(DONATION_FORMAT, name, total));
-			}
-			donorList.sort(new Comparator<String>() {
-				@Override
-				public int compare(String s1, String s2) {
-					Double d1 = Double.parseDouble(s1.substring(s1.indexOf("$") + 1));
-					Double d2 = Double.parseDouble(s2.substring(s2.indexOf("$") + 1));
-
-					return Double.compare(d2, d1);
-				}
-			});
-		}
+	private void updateList() {
+		// Refresh the front end display list.
+		donationsList.clear();
+		donationsList.addAll(SortUtil.getAsSortedList(donations, sortType, lumpDonations));
 	}
 
 	private void toggleSortType() {
 		switch (sortType) {
 		case ALPHABETICAL:
-			sortType = SortType.CHRONOLOGICAL;
-			return;
+			sortType = CHRONOLOGICAL;
+			break;
 		case CHRONOLOGICAL:
-			sortType = SortType.TOTAL_DONATIONS;
-			return;
-		case TOTAL_DONATIONS:
-			sortType = SortType.ALPHABETICAL;
-			return;
+			sortType = AMOUNT;
+			break;
+		case AMOUNT:
+			sortType = ALPHABETICAL;
+			break;
 		}
+		toggleSortTypeButton.setText(sortType.displayName());
 	}
 
-	private double getPercent() {
-		return current / target;
+	private Double getPercent() {
+		return Math.min(getCurrentTotal() / target, 1);
+	}
+
+	private Double getCurrentTotal() {
+		Double sum = 0d;
+		for (String name : donations.keySet()) {
+			Set<Donation> donationsSet = donations.get(name);
+			for (Donation donation : donationsSet) {
+				sum += donation.getAmount();
+			}
+		}
+		return sum;
 	}
 
 }
