@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SortUtil {
 
@@ -29,7 +28,7 @@ public class SortUtil {
 
 	}
 
-	public static List<String> getAsSortedList(Map<String, Set<Donation>> donationsMap, Type type, boolean sumTotal) {
+	public static List<Donation> getAsSortedList(Map<String, Set<Donation>> donationsMap, Type type, boolean sumTotal) {
 		Map<String, Set<Donation>> map = new HashMap<String, Set<Donation>>(donationsMap);
 		List<Donation> sorted = new ArrayList<Donation>();
 
@@ -49,7 +48,7 @@ public class SortUtil {
 			}
 		}
 		sorted.sort(type.comparator);
-		return sorted.stream().map(donation -> donation.toString()).collect(Collectors.toList());
+		return sorted;
 	}
 
 	private static class AlphabeticalComparator implements Comparator<Donation> {

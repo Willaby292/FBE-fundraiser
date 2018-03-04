@@ -7,8 +7,10 @@ import static main.SortUtil.Type.CHRONOLOGICAL;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,6 +19,8 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -45,11 +49,12 @@ public class Application extends javafx.application.Application {
 	}
 
 	// Constants
-	private static final String	TITLE				= "FBE Fundraiser";
-	private static final String	TITLE_FORMAT		= "Goal : ${0}";
-	private static final String	MESSAGE_FORMAT		= "Thank you {0} for donating ${1}";
+	private static final String	DISPLAY_TITLE		= "FBE Fundraiser";
+	private static final String	CONTROL_TITLE		= "Controls";
+	private static final String	HEADER_FORMAT		= "${0} of ${1}";
 	private static final String	FONT				= "Arial Monospace";
 	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
+	private static final String	APPLE_ICON_ALPHA	= "/resources/FBE_AppleIconCOLOR.png";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
@@ -58,7 +63,10 @@ public class Application extends javafx.application.Application {
 	private Double								target		= 5000d;
 
 	// Class-level field because we want to be able to access it from anywhere.
-	private Text					display;
+	private Stage	displayStage;
+	private Stage	controlStage;
+
+	private Text					header;
 	private Rectangle				progressBarAmount;
 	private ObservableList<String>	donationsList;
 
@@ -66,8 +74,17 @@ public class Application extends javafx.application.Application {
 	private static Type	sortType		= CHRONOLOGICAL;
 
 	@Override
-	public void start(Stage stage) {
+	public void start(Stage displayStage) {
+		this.displayStage = displayStage;
+		this.controlStage = new Stage();
 
+		setupDisplayStage(displayStage);
+		setupControlStage(controlStage);
+
+		updateDisplay();
+	}
+
+	private void setupDisplayStage(Stage displayStage) {
 		BorderPane pane = new BorderPane();
 		pane.setPadding(new Insets(25, 25, 25, 25));
 
@@ -76,11 +93,10 @@ public class Application extends javafx.application.Application {
 			{
 				setAlignment(Pos.CENTER);
 
-				Text title = new Text();
-				title.setTextAlignment(TextAlignment.CENTER);
-				title.setText(MessageFormat.format(TITLE_FORMAT, target));
-				title.setFont(Font.font(FONT, FontWeight.EXTRA_BOLD, 48));
-				getChildren().add(title);
+				header = new Text();
+				header.setTextAlignment(TextAlignment.CENTER);
+				header.setFont(Font.font(FONT, FontWeight.EXTRA_BOLD, 48));
+				getChildren().add(header);
 			}
 		});
 
@@ -105,16 +121,21 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
-		// Setup the Right section
-		pane.setRight(new ListView<String>() {
-			{
-				donationsList = FXCollections.observableArrayList();
-				setItems(donationsList);
-			}
-		});
+		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
+		// Put everything together and show it.
+		Scene scene = new Scene(pane);
+		displayStage.setTitle(DISPLAY_TITLE);
+		displayStage.getIcons().add(new Image(this.getClass().getResourceAsStream(APPLE_ICON_ALPHA)));
+		displayStage.setScene(scene);
+		displayStage.show();
+	}
 
-		// Setup the Bottom section
-		pane.setBottom(new GridPane() {
+	private void setupControlStage(Stage controlStage) {
+		BorderPane controlPane = new BorderPane();
+		controlPane.setPadding(new Insets(25, 25, 25, 25));
+
+		// Setup the Top section
+		controlPane.setTop(new GridPane() {
 			{
 				setAlignment(Pos.CENTER);
 
@@ -123,9 +144,6 @@ public class Application extends javafx.application.Application {
 
 				Label donorLabel = new Label("Donor: ");
 				TextField nameInput = new TextField();
-
-				display = new Text();
-				display.setFill(Color.FIREBRICK);
 
 				Button submitDonation = new Button("Enter");
 				submitDonation.setOnAction(new EventHandler<ActionEvent>() {
@@ -137,13 +155,18 @@ public class Application extends javafx.application.Application {
 							// NOTE: If donation isn't valid, catch the exception and tell the user.
 							Double amount = Double.parseDouble(amountInput.getText());
 							String name = nameInput.getText();
+							name = name.isEmpty() ? "Anonymous" : name;
 							Donation donation = new Donation(name, amount);
 
-							updateUI(donation);
+							update(donation);
 
 						} catch (NumberFormatException nfe) {
 							// If we fail to get a valid Double input, then tell the user.
-							display.setText("Donation must be a number");
+							Alert alert = new Alert(AlertType.WARNING);
+							alert.setTitle("Warning Dialog");
+							alert.setHeaderText(null);
+							alert.setContentText("Donation must be a number");
+							alert.showAndWait();
 						}
 					}
 				});
@@ -181,17 +204,13 @@ public class Application extends javafx.application.Application {
 					}
 				});
 
-				// Add Donation label and input to first row, first/second column respectively
 				add(donationLabel, 0, 0);
 				add(amountInput, 1, 0);
 
-				// Add Donation label and input to second row, first/second column respectively
 				add(donorLabel, 0, 1);
 				add(nameInput, 1, 1);
 
-				// Add Donation label and input to third row, first/second column respectively
 				add(submitDonation, 0, 2);
-				add(display, 1, 2);
 
 				add(toggleSortTypeButton, 0, 3);
 				add(lumpDonationsButton, 1, 3);
@@ -199,28 +218,35 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
-		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
-		// Put everything together and show it.
-		Scene scene = new Scene(pane);
-		stage.setTitle(TITLE);
-		stage.setScene(scene);
-		stage.show();
+		// Setup the Center section
+		controlPane.setCenter(new ListView<String>() {
+			{
+				donationsList = FXCollections.observableArrayList();
+				setItems(donationsList);
+			}
+		});
+
+		Scene controlScene = new Scene(controlPane);
+		controlStage.setScene(controlScene);
+		controlStage.setTitle(CONTROL_TITLE);
+		controlStage.getIcons().add(new Image(this.getClass().getResourceAsStream(APPLE_ICON_ALPHA)));
+		controlStage.show();
 	}
 
-	private void updateUI(Donation donation) {
+	private void update(Donation donation) {
 		// Update the current running total, set the height of the progressBar, update
 		// the display list,and display message.
-		Double amount = donation.getAmount();
-		String name = donation.getName();
-
-		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
-
-		updateDonations(donation);
-		updateList();
-		display.setText(MessageFormat.format(MESSAGE_FORMAT, name, amount));
+		addDonation(donation);
+		updateDisplay();
 	}
 
-	private void updateDonations(Donation donation) {
+	private void updateDisplay() {
+		updateList();
+		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
+		header.setText(MessageFormat.format(HEADER_FORMAT, getCurrentTotal(), target));
+	}
+
+	private void addDonation(Donation donation) {
 		// If that person hasn't made a donation, make a set for them.
 		String name = donation.getName();
 		if (!donations.containsKey(name)) {
@@ -233,7 +259,10 @@ public class Application extends javafx.application.Application {
 	private void updateList() {
 		// Refresh the front end display list.
 		donationsList.clear();
-		donationsList.addAll(SortUtil.getAsSortedList(donations, sortType, lumpDonations));
+		List<Donation> sortedList = SortUtil.getAsSortedList(donations, sortType, lumpDonations);
+		List<String> toStringList = sortedList.stream().map(donation -> donation.toString())
+				.collect(Collectors.toList());
+		donationsList.addAll(toStringList);
 	}
 
 	private Double getPercent() {
