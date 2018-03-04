@@ -92,7 +92,7 @@ public class Application extends javafx.application.Application {
 				setMaxHeight(PROGRESSBAR_HEIGHT);
 
 				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, Color.RED);
-				progressBarAmount.setTranslateY(0);
+				setAlignment(Pos.BOTTOM_CENTER);
 
 				ImageView progressBarOutline = new ImageView(new Image(APPLE_LOGO_ALPHA));
 
