@@ -23,6 +23,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -49,7 +51,7 @@ public class Application extends javafx.application.Application {
 	private static final String	TITLE_FORMAT		= "Goal : ${0}";
 	private static final String	MESSAGE_FORMAT		= "Thank you {0} for donating ${1}";
 	private static final String	FONT				= "Arial Monospace";
-	private static final String	APPLE_LOGO_ALPHA	= "file:FBE_AppleIconALPHA.png";
+	private static final String	APPLE_LOGO_ALPHA	= "file:FBE_AppleIconALPHA_TRIMMED.png";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
@@ -88,10 +90,11 @@ public class Application extends javafx.application.Application {
 		// Setup the Center section
 		pane.setCenter(new StackPane() {
 			{
+				setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
 				setMaxWidth(PROGRESSBAR_WIDTH);
 				setMaxHeight(PROGRESSBAR_HEIGHT);
 
-				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, Color.RED);
+				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, Color.SILVER);
 				setAlignment(Pos.BOTTOM_CENTER);
 
 				ImageView progressBarOutline = new ImageView(new Image(APPLE_LOGO_ALPHA));
@@ -183,6 +186,7 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
+		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
 		// Put everything together and show it.
 		Scene scene = new Scene(pane);
 		stage.setTitle(TITLE);
