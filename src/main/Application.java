@@ -44,14 +44,12 @@ public class Application extends javafx.application.Application {
 		launch(args);
 	}
 
-	private static Type sortType = CHRONOLOGICAL;
-
 	// Constants
 	private static final String	TITLE				= "FBE Fundraiser";
 	private static final String	TITLE_FORMAT		= "Goal : ${0}";
 	private static final String	MESSAGE_FORMAT		= "Thank you {0} for donating ${1}";
 	private static final String	FONT				= "Arial Monospace";
-	private static final String	APPLE_LOGO_ALPHA	= "file:FBE_AppleIconALPHA_TRIMMED.png";
+	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
@@ -63,10 +61,9 @@ public class Application extends javafx.application.Application {
 	private Text					display;
 	private Rectangle				progressBarAmount;
 	private ObservableList<String>	donationsList;
-	private Button					toggleSortTypeButton;
-	private Button					lumpDonationsButton;
 
-	private boolean lumpDonations = false;
+	private boolean		lumpDonations	= false;
+	private static Type	sortType		= CHRONOLOGICAL;
 
 	@Override
 	public void start(Stage stage) {
@@ -97,7 +94,8 @@ public class Application extends javafx.application.Application {
 				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, Color.SILVER);
 				setAlignment(Pos.BOTTOM_CENTER);
 
-				ImageView progressBarOutline = new ImageView(new Image(APPLE_LOGO_ALPHA));
+				ImageView progressBarOutline = new ImageView(
+						new Image(this.getClass().getResourceAsStream(APPLE_LOGO_ALPHA)));
 
 				progressBarOutline.setFitWidth(PROGRESSBAR_WIDTH);
 				progressBarOutline.setFitHeight(PROGRESSBAR_HEIGHT);
@@ -150,16 +148,31 @@ public class Application extends javafx.application.Application {
 					}
 				});
 
-				toggleSortTypeButton = new Button(sortType.displayName());
+				Button toggleSortTypeButton = new Button(sortType.displayName());
 				toggleSortTypeButton.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent e) {
 						toggleSortType();
 						updateList();
 					}
+
+					private void toggleSortType() {
+						switch (sortType) {
+						case ALPHABETICAL:
+							sortType = CHRONOLOGICAL;
+							break;
+						case CHRONOLOGICAL:
+							sortType = AMOUNT;
+							break;
+						case AMOUNT:
+							sortType = ALPHABETICAL;
+							break;
+						}
+						toggleSortTypeButton.setText(sortType.displayName());
+					}
 				});
 
-				lumpDonationsButton = new Button(lumpDonations ? "Total Donations" : "Individual Donations");
+				Button lumpDonationsButton = new Button(lumpDonations ? "Total Donations" : "Individual Donations");
 				lumpDonationsButton.setOnAction(new EventHandler<ActionEvent>() {
 					@Override
 					public void handle(ActionEvent e) {
@@ -221,21 +234,6 @@ public class Application extends javafx.application.Application {
 		// Refresh the front end display list.
 		donationsList.clear();
 		donationsList.addAll(SortUtil.getAsSortedList(donations, sortType, lumpDonations));
-	}
-
-	private void toggleSortType() {
-		switch (sortType) {
-		case ALPHABETICAL:
-			sortType = CHRONOLOGICAL;
-			break;
-		case CHRONOLOGICAL:
-			sortType = AMOUNT;
-			break;
-		case AMOUNT:
-			sortType = ALPHABETICAL;
-			break;
-		}
-		toggleSortTypeButton.setText(sortType.displayName());
 	}
 
 	private Double getPercent() {
