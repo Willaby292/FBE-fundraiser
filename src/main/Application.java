@@ -60,7 +60,7 @@ public class Application extends javafx.application.Application {
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
 
 	private final Map<String, Set<Donation>>	donations	= new HashMap<String, Set<Donation>>();
-	private Double								target		= 5000d;
+	private Double								target		= 25000d;
 
 	// Class-level field because we want to be able to access it from anywhere.
 	private Stage	displayStage;
@@ -158,8 +158,10 @@ public class Application extends javafx.application.Application {
 							String name = nameInput.getText();
 							name = name.isEmpty() ? "Anonymous" : name;
 							Donation donation = new Donation(name, amount);
-
+							
 							update(donation);
+							amountInput.clear();
+							nameInput.clear();
 
 						} catch (NumberFormatException nfe) {
 							// If we fail to get a valid Double input, then tell the user.
@@ -201,10 +203,10 @@ public class Application extends javafx.application.Application {
 					@Override
 					public void handle(ActionEvent e) {
 						lumpDonations = !lumpDonations;
+						lumpDonationsButton.setText(lumpDonations ? "Total Donations" : "Individual Donations");
 						updateList();
 					}
 				});
-
 				add(donationLabel, 0, 0);
 				add(amountInput, 1, 0);
 
@@ -219,12 +221,33 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
+		
 		// Setup the Center section
 		controlPane.setCenter(new ListView<String>() {
 			{
 				donationsList = FXCollections.observableArrayList();
 				setItems(donationsList);
 			}
+		});
+		
+		// Setup the Bottom section
+		controlPane.setBottom(new GridPane() {
+			{
+				Button clearDonations = new Button("Clear All");
+				clearDonations.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent e) {
+						donations.clear();
+						updateDisplay();
+						save();
+
+					}
+				});
+				
+				add(clearDonations, 0, 0);
+				
+			}
+			
 		});
 
 		Scene controlScene = new Scene(controlPane);

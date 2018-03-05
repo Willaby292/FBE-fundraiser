@@ -15,7 +15,7 @@ public class SaveUtil {
 
 	private static final SimpleDateFormat	DATE_FORMAT	= new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private static final String				FILE_NAME	= "save.txt";
-	private static final String				DELIMITER	= ", ";
+	private static final String				DELIMITER	= "//";
 
 	public static void save(List<Donation> donations) {
 		try {
@@ -25,7 +25,7 @@ public class SaveUtil {
 				String name = donation.getName();
 				Double amount = donation.getAmount();
 				String time = DATE_FORMAT.format(new Date(donation.getTime()));
-				out.print(name + DELIMITER + amount + DELIMITER + time + "\n");
+				out.println(name + DELIMITER + amount + DELIMITER + time);
 			}
 			out.close();
 		} catch (FileNotFoundException e) {
