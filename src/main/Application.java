@@ -78,13 +78,14 @@ public class Application extends javafx.application.Application {
 		this.displayStage = displayStage;
 		this.controlStage = new Stage();
 
-		setupDisplayStage(displayStage);
-		setupControlStage(controlStage);
+		setupDisplayStage();
+		setupControlStage();
 
+		load();
 		updateDisplay();
 	}
 
-	private void setupDisplayStage(Stage displayStage) {
+	private void setupDisplayStage() {
 		BorderPane pane = new BorderPane();
 		pane.setPadding(new Insets(25, 25, 25, 25));
 
@@ -130,7 +131,7 @@ public class Application extends javafx.application.Application {
 		displayStage.show();
 	}
 
-	private void setupControlStage(Stage controlStage) {
+	private void setupControlStage() {
 		BorderPane controlPane = new BorderPane();
 		controlPane.setPadding(new Insets(25, 25, 25, 25));
 
@@ -238,6 +239,7 @@ public class Application extends javafx.application.Application {
 		// the display list,and display message.
 		addDonation(donation);
 		updateDisplay();
+		save();
 	}
 
 	private void updateDisplay() {
@@ -278,6 +280,17 @@ public class Application extends javafx.application.Application {
 			}
 		}
 		return sum;
+	}
+
+	private void save() {
+		SaveUtil.save(SortUtil.getAsSortedList(donations, Type.CHRONOLOGICAL, false));
+	}
+
+	private void load() {
+		List<Donation> list = SaveUtil.load();
+		for (Donation donation : list) {
+			addDonation(donation);
+		}
 	}
 
 }
