@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -29,10 +30,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -44,6 +41,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import main.SortUtil.Type;
 
 public class Application extends javafx.application.Application {
@@ -59,7 +57,7 @@ public class Application extends javafx.application.Application {
 	private static final String	FONT				= "Arial Monospace";
 	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
 	private static final String	APPLE_ICON_ALPHA	= "/resources/FBE_AppleIconCOLOR.png";
-	private static final String confetti			= "/resources/source.gif";
+	private static final String	CONFETTI_GIF		= "/resources/source.gif";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
@@ -74,12 +72,10 @@ public class Application extends javafx.application.Application {
 	private Text					header;
 	private Rectangle				progressBarAmount;
 	private ObservableList<String>	donationsList;
+	private ImageView				celebration;
 
 	private boolean		lumpDonations	= false;
 	private static Type	sortType		= CHRONOLOGICAL;
-	
-	ImageView celebration = new ImageView(
-			new Image(this.getClass().getResourceAsStream(confetti)));
 
 	@Override
 	public void start(Stage displayStage) {
@@ -96,13 +92,7 @@ public class Application extends javafx.application.Application {
 	private void setupDisplayStage() {
 		BorderPane pane = new BorderPane();
 		pane.setPadding(new Insets(25, 25, 25, 25));
-		
-		
 
-		celebration.setFitWidth(PROGRESSBAR_WIDTH);
-		celebration.setFitHeight(PROGRESSBAR_HEIGHT);
-		celebration.setOpacity(0);
-		
 		// Setup the Top section
 		pane.setTop(new HBox() {
 			{
@@ -112,7 +102,7 @@ public class Application extends javafx.application.Application {
 				header.setTextAlignment(TextAlignment.CENTER);
 				header.setFont(Font.font(FONT, FontWeight.EXTRA_BOLD, 48));
 				getChildren().add(header);
-				
+
 			}
 		});
 
@@ -129,21 +119,13 @@ public class Application extends javafx.application.Application {
 				ImageView progressBarOutline = new ImageView(
 						new Image(this.getClass().getResourceAsStream(APPLE_LOGO_ALPHA)));
 
-				
-				
 				progressBarOutline.setFitWidth(PROGRESSBAR_WIDTH);
 				progressBarOutline.setFitHeight(PROGRESSBAR_HEIGHT);
 
-				
-
 				getChildren().add(progressBarAmount);
 				getChildren().add(progressBarOutline);
-				getChildren().add(celebration);
-				
 			}
 		});
-		
-		
 
 		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
 		// Put everything together and show it.
@@ -152,6 +134,14 @@ public class Application extends javafx.application.Application {
 		displayStage.getIcons().add(new Image(this.getClass().getResourceAsStream(APPLE_ICON_ALPHA)));
 		displayStage.setScene(scene);
 		displayStage.show();
+
+		celebration = new ImageView(new Image(this.getClass().getResourceAsStream(CONFETTI_GIF)));
+
+		celebration.fitWidthProperty().bind(displayStage.widthProperty());
+		celebration.fitHeightProperty().bind(displayStage.heightProperty());
+		celebration.setVisible(false);
+		pane.getChildren().add(celebration);
+
 	}
 
 	private void setupControlStage() {
@@ -181,7 +171,7 @@ public class Application extends javafx.application.Application {
 							String name = nameInput.getText();
 							name = name.isEmpty() ? "Anonymous" : name;
 							Donation donation = new Donation(name, amount);
-							
+
 							update(donation);
 							amountInput.clear();
 							nameInput.clear();
@@ -244,7 +234,6 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
-		
 		// Setup the Center section
 		controlPane.setCenter(new ListView<String>() {
 			{
@@ -252,7 +241,7 @@ public class Application extends javafx.application.Application {
 				setItems(donationsList);
 			}
 		});
-		
+
 		// Setup the Bottom section
 		controlPane.setBottom(new GridPane() {
 			{
@@ -263,14 +252,10 @@ public class Application extends javafx.application.Application {
 						donations.clear();
 						updateDisplay();
 						save();
-
 					}
 				});
-				
 				add(clearDonations, 0, 0);
-				
 			}
-			
 		});
 
 		Scene controlScene = new Scene(controlPane);
@@ -292,9 +277,17 @@ public class Application extends javafx.application.Application {
 		updateList();
 		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
 		header.setText(MessageFormat.format(HEADER_FORMAT, getCurrentTotal(), target));
-		if(target <= getCurrentTotal()) {
-			celebration.setOpacity(1);
+		boolean targetReached = getCurrentTotal() >= target;
+		if (targetReached) {
+			celebration.setVisible(true);
+			FadeTransition ft = new FadeTransition(Duration.seconds(1), celebration);
+			ft.setFromValue(targetReached ? 0 : 1);
+			ft.setToValue(targetReached ? 1 : 0);
+			ft.play();
+		} else {
+			celebration.setVisible(false);
 		}
+
 	}
 
 	private void addDonation(Donation donation) {
