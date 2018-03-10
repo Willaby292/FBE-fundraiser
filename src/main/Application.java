@@ -29,6 +29,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -55,6 +59,7 @@ public class Application extends javafx.application.Application {
 	private static final String	FONT				= "Arial Monospace";
 	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
 	private static final String	APPLE_ICON_ALPHA	= "/resources/FBE_AppleIconCOLOR.png";
+	private static final String confetti			= "/resources/source.gif";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
@@ -72,6 +77,9 @@ public class Application extends javafx.application.Application {
 
 	private boolean		lumpDonations	= false;
 	private static Type	sortType		= CHRONOLOGICAL;
+	
+	ImageView celebration = new ImageView(
+			new Image(this.getClass().getResourceAsStream(confetti)));
 
 	@Override
 	public void start(Stage displayStage) {
@@ -88,7 +96,13 @@ public class Application extends javafx.application.Application {
 	private void setupDisplayStage() {
 		BorderPane pane = new BorderPane();
 		pane.setPadding(new Insets(25, 25, 25, 25));
+		
+		
 
+		celebration.setFitWidth(PROGRESSBAR_WIDTH);
+		celebration.setFitHeight(PROGRESSBAR_HEIGHT);
+		celebration.setOpacity(0);
+		
 		// Setup the Top section
 		pane.setTop(new HBox() {
 			{
@@ -98,6 +112,7 @@ public class Application extends javafx.application.Application {
 				header.setTextAlignment(TextAlignment.CENTER);
 				header.setFont(Font.font(FONT, FontWeight.EXTRA_BOLD, 48));
 				getChildren().add(header);
+				
 			}
 		});
 
@@ -114,13 +129,21 @@ public class Application extends javafx.application.Application {
 				ImageView progressBarOutline = new ImageView(
 						new Image(this.getClass().getResourceAsStream(APPLE_LOGO_ALPHA)));
 
+				
+				
 				progressBarOutline.setFitWidth(PROGRESSBAR_WIDTH);
 				progressBarOutline.setFitHeight(PROGRESSBAR_HEIGHT);
 
+				
+
 				getChildren().add(progressBarAmount);
 				getChildren().add(progressBarOutline);
+				getChildren().add(celebration);
+				
 			}
 		});
+		
+		
 
 		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
 		// Put everything together and show it.
@@ -269,6 +292,9 @@ public class Application extends javafx.application.Application {
 		updateList();
 		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
 		header.setText(MessageFormat.format(HEADER_FORMAT, getCurrentTotal(), target));
+		if(target <= getCurrentTotal()) {
+			celebration.setOpacity(1);
+		}
 	}
 
 	private void addDonation(Donation donation) {
