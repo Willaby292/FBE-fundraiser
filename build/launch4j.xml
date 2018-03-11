@@ -14,6 +14,10 @@
   <restartOnCrash>false</restartOnCrash>
   <manifest></manifest>
   <icon>C:\projects\git\Fundraiser\src\resources\FBE_AppleIconCOLOR.ico</icon>
+  <singleInstance>
+    <mutexName>FundraiserApp</mutexName>
+    <windowTitle>FBE Fundraiser</windowTitle>
+  </singleInstance>
   <jre>
     <path>jre</path>
     <bundledJre64Bit>false</bundledJre64Bit>

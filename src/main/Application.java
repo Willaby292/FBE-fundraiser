@@ -81,6 +81,8 @@ public class Application extends javafx.application.Application {
 
 	private static Application instance;
 
+	boolean on = true;
+
 	@Override
 	public void start(Stage displayStage) {
 		instance = this;
@@ -88,10 +90,16 @@ public class Application extends javafx.application.Application {
 		this.displayStage = displayStage;
 		this.controlStage = new Stage();
 
+		reload();
+	}
+
+	public void reload() {
+
+		loadProperties();
+
 		setupDisplayStage();
 		setupControlStage();
-
-		load();
+		loadDonations();
 		updateDisplay();
 	}
 
@@ -115,11 +123,12 @@ public class Application extends javafx.application.Application {
 		// Setup the Center section
 		displayPane.setCenter(new StackPane() {
 			{
-				setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
+				setBackground(
+						new Background(new BackgroundFill(PropertyReader.getProgressBarBackgroundColor(), null, null)));
 				setMaxWidth(PROGRESSBAR_WIDTH);
 				setMaxHeight(PROGRESSBAR_HEIGHT);
 
-				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, Color.SILVER);
+				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, PropertyReader.getProgressBarFillColor());
 				setAlignment(Pos.BOTTOM_CENTER);
 
 				ImageView progressBarOutline = new ImageView(
@@ -259,10 +268,19 @@ public class Application extends javafx.application.Application {
 					public void handle(ActionEvent e) {
 						donations.clear();
 						updateDisplay();
-						save();
+						saveDonations();
+					}
+				});
+				Button reloadButton = new Button("Reload");
+				reloadButton.setOnAction(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent e) {
+						reload();
 					}
 				});
 				add(clearDonations, 0, 0);
+				add(reloadButton, 1, 0);
+
 			}
 		});
 
@@ -278,7 +296,7 @@ public class Application extends javafx.application.Application {
 		// the display list,and display message.
 		addDonation(donation);
 		updateDisplay();
-		save();
+		saveDonations();
 	}
 
 	private void updateDisplay() {
@@ -327,15 +345,19 @@ public class Application extends javafx.application.Application {
 		return sum;
 	}
 
-	private void save() {
+	private void saveDonations() {
 		SaveUtil.save(SortUtil.getAsSortedList(donations, Type.CHRONOLOGICAL, false));
 	}
 
-	private void load() {
+	private void loadDonations() {
 		List<Donation> list = SaveUtil.load();
 		for (Donation donation : list) {
 			addDonation(donation);
 		}
+	}
+
+	private void loadProperties() {
+		PropertyReader.load();
 	}
 
 	private void stopCelebration() {

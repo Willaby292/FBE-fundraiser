@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "FBE Fundraiser"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Alvarez, Inc."
 #define MyAppURL "https://github.com/Willaby292"
 #define MyAppExeName "application.exe"
@@ -35,8 +35,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
-Source: "{#projectPath}\build\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#projectPath}\build\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion    
 Source: "{#projectPath}\build\save.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#projectPath}\build\settings.txt"; DestDir: "{app}"; Flags:  
 Source: "{#jre}\*"; DestDir: "{app}\jre"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
