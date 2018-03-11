@@ -12,7 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javafx.animation.FadeTransition;
+import effects.Celebration;
+import effects.Firework;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -33,6 +34,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -41,7 +43,6 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import main.SortUtil.Type;
 
 public class Application extends javafx.application.Application {
@@ -57,28 +58,33 @@ public class Application extends javafx.application.Application {
 	private static final String	FONT				= "Arial Monospace";
 	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
 	private static final String	APPLE_ICON_ALPHA	= "/resources/FBE_AppleIconCOLOR.png";
-	private static final String	CONFETTI_GIF		= "/resources/source.gif";
 
 	private static final Double	PROGRESSBAR_WIDTH	= 600d;
 	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
+
+	private static final Insets INSETS = new Insets(25, 25, 25, 25);
 
 	private final Map<String, Set<Donation>>	donations	= new HashMap<String, Set<Donation>>();
 	private Double								target		= 25000d;
 
 	// Class-level field because we want to be able to access it from anywhere.
-	private Stage	displayStage;
 	private Stage	controlStage;
+	private Stage	displayStage;
+	private Pane	fireworkPane;
 
 	private Text					header;
 	private Rectangle				progressBarAmount;
 	private ObservableList<String>	donationsList;
-	private ImageView				celebration;
 
 	private boolean		lumpDonations	= false;
 	private static Type	sortType		= CHRONOLOGICAL;
 
+	private static Application instance;
+
 	@Override
 	public void start(Stage displayStage) {
+		instance = this;
+
 		this.displayStage = displayStage;
 		this.controlStage = new Stage();
 
@@ -90,11 +96,11 @@ public class Application extends javafx.application.Application {
 	}
 
 	private void setupDisplayStage() {
-		BorderPane pane = new BorderPane();
-		pane.setPadding(new Insets(25, 25, 25, 25));
+		BorderPane displayPane = new BorderPane();
+		displayPane.setPadding(INSETS);
 
 		// Setup the Top section
-		pane.setTop(new HBox() {
+		displayPane.setTop(new HBox() {
 			{
 				setAlignment(Pos.CENTER);
 
@@ -107,7 +113,7 @@ public class Application extends javafx.application.Application {
 		});
 
 		// Setup the Center section
-		pane.setCenter(new StackPane() {
+		displayPane.setCenter(new StackPane() {
 			{
 				setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
 				setMaxWidth(PROGRESSBAR_WIDTH);
@@ -127,26 +133,26 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
-		pane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
+		displayPane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
+
+		StackPane stackPane = new StackPane();
+		stackPane.getChildren().add(displayPane);
+
+		fireworkPane = new Pane();
+		stackPane.getChildren().add(fireworkPane);
+
 		// Put everything together and show it.
-		Scene scene = new Scene(pane);
+		Scene displayScene = new Scene(stackPane);
 		displayStage.setTitle(DISPLAY_TITLE);
 		displayStage.getIcons().add(new Image(this.getClass().getResourceAsStream(APPLE_ICON_ALPHA)));
-		displayStage.setScene(scene);
+		displayStage.setScene(displayScene);
 		displayStage.show();
-
-		celebration = new ImageView(new Image(this.getClass().getResourceAsStream(CONFETTI_GIF)));
-
-		celebration.fitWidthProperty().bind(displayStage.widthProperty());
-		celebration.fitHeightProperty().bind(displayStage.heightProperty());
-		celebration.setVisible(false);
-		pane.getChildren().add(celebration);
 
 	}
 
 	private void setupControlStage() {
 		BorderPane controlPane = new BorderPane();
-		controlPane.setPadding(new Insets(25, 25, 25, 25));
+		controlPane.setPadding(INSETS);
 
 		// Setup the Top section
 		controlPane.setTop(new GridPane() {
@@ -175,6 +181,8 @@ public class Application extends javafx.application.Application {
 							update(donation);
 							amountInput.clear();
 							nameInput.clear();
+
+							Firework.launch((int) (donation.getAmount() / 10));
 
 						} catch (NumberFormatException nfe) {
 							// If we fail to get a valid Double input, then tell the user.
@@ -279,15 +287,10 @@ public class Application extends javafx.application.Application {
 		header.setText(MessageFormat.format(HEADER_FORMAT, getCurrentTotal(), target));
 		boolean targetReached = getCurrentTotal() >= target;
 		if (targetReached) {
-			celebration.setVisible(true);
-			FadeTransition ft = new FadeTransition(Duration.seconds(1), celebration);
-			ft.setFromValue(targetReached ? 0 : 1);
-			ft.setToValue(targetReached ? 1 : 0);
-			ft.play();
+			startCelebration();
 		} else {
-			celebration.setVisible(false);
+			stopCelebration();
 		}
-
 	}
 
 	private void addDonation(Donation donation) {
@@ -333,6 +336,18 @@ public class Application extends javafx.application.Application {
 		for (Donation donation : list) {
 			addDonation(donation);
 		}
+	}
+
+	private void stopCelebration() {
+		Celebration.stop();
+	}
+
+	private void startCelebration() {
+		Celebration.start();
+	}
+
+	public static Pane getTargetPane() {
+		return instance.fireworkPane;
 	}
 
 }
