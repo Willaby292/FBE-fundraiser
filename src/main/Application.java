@@ -12,8 +12,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import effects.Celebration;
 import effects.Firework;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -43,6 +45,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import main.SortUtil.Type;
 
 public class Application extends javafx.application.Application {
@@ -59,9 +62,6 @@ public class Application extends javafx.application.Application {
 	private static final String	APPLE_LOGO_ALPHA	= "/resources/FBE_AppleIconALPHA_TRIMMED.png";
 	private static final String	APPLE_ICON_ALPHA	= "/resources/FBE_AppleIconCOLOR.png";
 
-	private static final Double	PROGRESSBAR_WIDTH	= 600d;
-	private static final Double	PROGRESSBAR_HEIGHT	= 600d;
-
 	private static final Insets INSETS = new Insets(25, 25, 25, 25);
 
 	private final Map<String, Set<Donation>>	donations	= new HashMap<String, Set<Donation>>();
@@ -76,17 +76,14 @@ public class Application extends javafx.application.Application {
 	private Rectangle				progressBarAmount;
 	private ObservableList<String>	donationsList;
 
+	private Timeline	celebration;
 	private boolean		lumpDonations	= false;
 	private static Type	sortType		= CHRONOLOGICAL;
-
-	private static Application instance;
 
 	boolean on = true;
 
 	@Override
 	public void start(Stage displayStage) {
-		instance = this;
-
 		this.displayStage = displayStage;
 		this.controlStage = new Stage();
 
@@ -94,8 +91,7 @@ public class Application extends javafx.application.Application {
 	}
 
 	public void reload() {
-
-		loadProperties();
+		reloadProperties();
 
 		setupDisplayStage();
 		setupControlStage();
@@ -123,19 +119,21 @@ public class Application extends javafx.application.Application {
 		// Setup the Center section
 		displayPane.setCenter(new StackPane() {
 			{
+				Double width = PropertyReader.SIZE_WIDTH.getValue();
+				Double height = PropertyReader.SIZE_HEIGHT.getValue();
 				setBackground(
-						new Background(new BackgroundFill(PropertyReader.getProgressBarBackgroundColor(), null, null)));
-				setMaxWidth(PROGRESSBAR_WIDTH);
-				setMaxHeight(PROGRESSBAR_HEIGHT);
+						new Background(new BackgroundFill(PropertyReader.BACKGROUND_COLOR.getValue(), null, null)));
+				setMaxWidth(width);
+				setMaxHeight(height);
 
-				progressBarAmount = new Rectangle(PROGRESSBAR_WIDTH, 0, PropertyReader.getProgressBarFillColor());
+				progressBarAmount = new Rectangle(width, 0, PropertyReader.FILL_COLOR.getValue());
 				setAlignment(Pos.BOTTOM_CENTER);
 
 				ImageView progressBarOutline = new ImageView(
 						new Image(this.getClass().getResourceAsStream(APPLE_LOGO_ALPHA)));
 
-				progressBarOutline.setFitWidth(PROGRESSBAR_WIDTH);
-				progressBarOutline.setFitHeight(PROGRESSBAR_HEIGHT);
+				progressBarOutline.setFitWidth(width);
+				progressBarOutline.setFitHeight(height);
 
 				getChildren().add(progressBarAmount);
 				getChildren().add(progressBarOutline);
@@ -148,6 +146,11 @@ public class Application extends javafx.application.Application {
 		stackPane.getChildren().add(displayPane);
 
 		fireworkPane = new Pane();
+		celebration = new Timeline(new KeyFrame(Duration.millis(500), func -> {
+			Integer amount = MathUtils.randInRange(3, 5);
+			Firework.launch(fireworkPane, amount);
+		}));
+		celebration.setCycleCount(Animation.INDEFINITE);
 		stackPane.getChildren().add(fireworkPane);
 
 		// Put everything together and show it.
@@ -191,7 +194,7 @@ public class Application extends javafx.application.Application {
 							amountInput.clear();
 							nameInput.clear();
 
-							Firework.launch((int) (donation.getAmount() / 10));
+							Firework.launch(fireworkPane, (int) (donation.getAmount() / 10));
 
 						} catch (NumberFormatException nfe) {
 							// If we fail to get a valid Double input, then tell the user.
@@ -301,7 +304,7 @@ public class Application extends javafx.application.Application {
 
 	private void updateDisplay() {
 		updateList();
-		progressBarAmount.setHeight(getPercent() * PROGRESSBAR_HEIGHT);
+		progressBarAmount.setHeight(getPercent() * PropertyReader.SIZE_HEIGHT.getValue());
 		header.setText(MessageFormat.format(HEADER_FORMAT, getCurrentTotal(), target));
 		boolean targetReached = getCurrentTotal() >= target;
 		if (targetReached) {
@@ -356,20 +359,16 @@ public class Application extends javafx.application.Application {
 		}
 	}
 
-	private void loadProperties() {
-		PropertyReader.load();
+	private void reloadProperties() {
+		PropertyReader.reload();
 	}
 
-	private void stopCelebration() {
-		Celebration.stop();
+	public void startCelebration() {
+		celebration.play();
 	}
 
-	private void startCelebration() {
-		Celebration.start();
-	}
-
-	public static Pane getTargetPane() {
-		return instance.fireworkPane;
+	public void stopCelebration() {
+		celebration.stop();
 	}
 
 }

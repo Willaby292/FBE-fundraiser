@@ -10,12 +10,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
-import main.Application;
 import main.MathUtils;
 
 public class Particle extends Circle {
-
-	protected static Pane targetPane = Application.getTargetPane();
 
 	protected static final Double	MAX_RADIUS	= 5d;
 	protected static final Double	MIN_RADIUS	= 2d;
@@ -57,7 +54,6 @@ public class Particle extends Circle {
 	}
 
 	protected void launch() {
-		targetPane.getChildren().add(this);
 		final Timeline timeline = new Timeline();
 		Interpolator interpolator = new Interpolator() {
 			@Override
@@ -84,7 +80,8 @@ public class Particle extends Circle {
 	}
 
 	protected void terminate() {
-		targetPane.getChildren().remove(this);
+		Pane pane = (Pane) getParent();
+		pane.getChildren().remove(this);
 	}
 
 	protected Color getColor() {

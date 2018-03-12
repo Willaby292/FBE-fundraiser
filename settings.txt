@@ -1,4 +1,7 @@
 #  For a list of supported colors, visit https://www.w3schools.com/colors/colors_names.asp
-progress.fill.color = SILVER
-progress.background.color = GREEN
+progress.fill.color 		= SILVER
+progress.background.color 	= GREEN
+
+progress.size.width 		= 600
+progress.size.height 		= 600
 

@@ -3,6 +3,7 @@ package effects;
 import java.util.HashSet;
 import java.util.Set;
 
+import javafx.scene.layout.Pane;
 import main.MathUtils;
 
 public class Firework extends Particle {
@@ -13,13 +14,13 @@ public class Firework extends Particle {
 
 	private Set<Particle> payload;
 
-	public static void launch(int amount) {
+	public static void launch(Pane pane, int amount) {
 		// Make sure we dont spawn too many Fireworks or the app will crash.
 		// Limit to 10
 		amount = Math.min(amount, 10);
 		for (int i = 0; i < amount; i++) {
-			Double width = targetPane.getWidth();
-			Double height = targetPane.getHeight();
+			Double width = pane.getWidth();
+			Double height = pane.getHeight();
 			Firework firework = new Firework();
 			Double start_x = MathUtils.randRange(0d, width);
 			Double dest_x = MathUtils.randRange(0d, width);
@@ -31,6 +32,7 @@ public class Firework extends Particle {
 			firework.setCenterY(start_y);
 			firework.setDestination(dest_x, dest_y);
 			firework.launch();
+			pane.getChildren().add(firework);
 		}
 	}
 
@@ -56,6 +58,7 @@ public class Firework extends Particle {
 
 	@Override
 	protected void terminate() {
+		Pane pane = (Pane) getParent();
 		int count = 0;
 		for (Particle particle : payload) {
 			particle.setStartLocation(getCenterX(), getCenterY());
@@ -63,8 +66,10 @@ public class Firework extends Particle {
 			Double magnitude = getRadius() * EXPLOSION_SIZE;
 			particle.setTrajectory(magnitude, direction);
 			particle.launch();
+			pane.getChildren().add(particle);
+
 		}
-		targetPane.getChildren().remove(this);
+		pane.getChildren().remove(this);
 	}
 
 }
