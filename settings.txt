@@ -4,4 +4,3 @@ progress.background.color 	= GREEN
 
 progress.size.width 		= 600
 progress.size.height 		= 600
-

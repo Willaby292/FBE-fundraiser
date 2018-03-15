@@ -111,6 +111,7 @@ public class Application extends javafx.application.Application {
 				header = new Text();
 				header.setTextAlignment(TextAlignment.CENTER);
 				header.setFont(Font.font(FONT, FontWeight.EXTRA_BOLD, 48));
+				header.setFill(Color.WHITE);
 				getChildren().add(header);
 
 			}
@@ -140,7 +141,7 @@ public class Application extends javafx.application.Application {
 			}
 		});
 
-		displayPane.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
+		displayPane.setBackground(new Background(new BackgroundFill(Color.rgb(0,62,113), null, null)));
 
 		StackPane stackPane = new StackPane();
 		stackPane.getChildren().add(displayPane);

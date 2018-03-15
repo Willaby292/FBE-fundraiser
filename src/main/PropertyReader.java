@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.activation.UnsupportedDataTypeException;
 
 import javafx.scene.paint.Color;
 
@@ -54,7 +53,7 @@ public class PropertyReader {
 			if (assignableFromDouble) {
 				return (Type) new Double(Double.parseDouble(input));
 			}
-			throw new UnsupportedDataTypeException(
+			throw new Exception(
 					"Type=" + default_value.getClass() + " parsing has not yet been implemented.");
 		} catch (Exception e) {
 			e.printStackTrace();
